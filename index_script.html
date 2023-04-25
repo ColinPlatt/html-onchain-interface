@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Read Contract URI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.3.0/ethers.umd.min.js"></script>
+    <script>
+      async function getScriptURI() {
+        // Get the Ethereum address from the input field
+        const contractAddress = document.getElementById("address").value;
+
+        // Create a provider object using the provider provided by MetaMask
+        const provider = new ethers.BrowserProvider(window.ethereum);
+
+        // Prompt the user to enter the contract address
+        if(!contractAddress) {
+          contractAddress = prompt("Enter the contract address");
+          if (!contractAddress) {
+            return;
+          }
+        }
+        
+        // Create a contract object for the contract that contains the scriptURI function
+        const contractAbi = [
+            {
+                "inputs": [],
+                "name": "scriptURI",
+                "outputs": [
+                {
+                    "internalType": "string",
+                    "name": "",
+                    "type": "string"
+                }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+        const contract = new ethers.Contract(contractAddress, contractAbi, provider);
+
+        // Call the scriptURI function and display the result in the output box
+        const scriptURI = await contract.scriptURI();
+        document.getElementById("output").innerHTML = scriptURI;
+      }
+
+      async function getTokenURI() {
+        // Get the Ethereum address from the input field
+        const contractAddress = document.getElementById("address").value;
+
+        // Create a provider object using the provider provided by MetaMask
+        const provider = new ethers.BrowserProvider(window.ethereum);
+
+        
+        // Create a contract object for the contract that contains the scriptURI function
+        const contractAbi = [
+                {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "tokenURI",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+        const contract = new ethers.Contract(contractAddress, contractAbi, provider);
+
+        // Call the scriptURI function and display the result in the output box
+        let tokenURI = await contract.tokenURI(1);
+        // Check if the scriptURI starts with "data:application/json;base64,"
+        if (tokenURI.startsWith("data:application/json;base64,")) {
+            // Decode the base64-encoded JSON
+            tokenURI = atob(tokenURI.slice(29));
+            const json = JSON.parse(tokenURI);
+
+            // Check if the "image" or "animation_url" property starts with "data:text/html;base64,"
+            if (json.animation_url && json.animation_url.startsWith("data:text/html;base64,")) {
+                // Decode the base64-encoded animation data
+                tokenURI = json.animation_url;
+            }
+            if (json.image && json.image.startsWith("data:text/html;base64,")) {
+                // Decode the base64-encoded image data
+                tokenURI = json.image;
+            }
+        }
+
+        // Create an iframe element with the decoded tokenURI as the source
+        const iframe = document.createElement("iframe");
+        iframe.sandbox = "allow-scripts allow-same-origin allow-modals allow-popups allow-forms";
+        iframe.src = tokenURI;
+        iframe.width = "100%";
+        iframe.height = "500px";
+
+        // Remove the old iframe if it exists
+        const oldIframe = document.getElementById("output-iframe");
+        if (oldIframe) {
+            oldIframe.parentNode.removeChild(oldIframe);
+        }
+
+        // Add the new iframe to the output div
+        const outputDiv = document.getElementById("output");
+        outputDiv.appendChild(iframe);
+    }
+
+      async function connectWallet() {
+        try {
+          // Request access to the MetaMask provider
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+        } catch (error) {
+          console.error(error);
+        }
+
+        // Hide the "Connect Wallet" button
+        document.getElementById("connectButton").style.display = "none";
+      }
+
+      window.addEventListener('load', async () => {
+        // Check if MetaMask is already connected
+        if (typeof window.ethereum !== 'undefined' && window.ethereum.isConnected()) {
+          // Hide the "Connect Wallet" button
+          document.getElementById("connectButton").style.display = "none";
+        } else {
+          // Show the "Connect Wallet" button
+          document.getElementById("connectButton").style.display = "block";
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Read Contract URI</h1>
+    <button id="connectButton" type="button" onclick="connectWallet()">Connect Wallet</button>
+    <form>
+      <label for="address">Ethereum address:</label>
+      <input type="text" id="address" name="address">
+      <button type="button" onclick="getScriptURI()">Get script URI</button>
+      <button type="button" onclick="getTokenURI()">Get token URI</button>
+    </form>
+    <div id="output">
+      <h2>URI:</h2>
+      <!-- The decoded tokenURI will be displayed inside this iframe -->
+    </div>
+    
+  </body>
+</html>
+
+
+

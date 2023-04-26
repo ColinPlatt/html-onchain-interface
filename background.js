@@ -97,6 +97,10 @@ window.addEventListener("load", () => {
         document.getElementById("connectButton").style.display = "none";
     } else {
         // Show the "Connect Wallet" button
-        document.getElementById("connectButton").style.display = "block";
+        //document.getElementById("connectButton").style.display = "block";
     }
+});
+
+chrome.browserAction.onClicked.addListener(function(activeTab){
+  chrome.tabs.create({ url: "index.html" });
 });
